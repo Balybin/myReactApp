@@ -1,44 +1,55 @@
-import L, { LatLng } from "leaflet";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { LatLng } from "leaflet";
 import "./App.css";
-import { SearchStr, SearchStrProps } from "./SearchStr";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import axios from "axios";
-
+import { SearchStr } from "./SearchStr";
+import { useState } from "react";
+import { MyMapComponent } from "./MyMap";
+import { BehaviorSubject } from "rxjs";
+import { MapContainer } from "react-leaflet";
 function App() {
-  let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-  });
-  L.Marker.prototype.options.icon = DefaultIcon;
-  let position = new LatLng(54.988936910720994, 82.91288650421464);
+  let [mapPosition, setMapPosition] = useState(
+    new BehaviorSubject<LatLng>(
+      new LatLng(54.988936910720994, 82.91288650421464)
+    )
+  );
+  let [markerPosition, setMarkerPosition] = useState<
+    BehaviorSubject<LatLng | null>
+  >(new BehaviorSubject<LatLng | null>(null));
+
   let coordChange = function markerOnMap(position: LatLng) {
     // обработка новой позиции маркера
+    markerPosition.next(position);
+    mapPosition.next(position);
   };
 
   return (
-    <div>
-      <SearchStr coordChange={coordChange}></SearchStr>
-      <MapContainer
-        center={position}
-        zoom={15}
-        style={{ height: 800 }}
-        minZoom={1}
-        maxZoom={17}
-      >
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={position}>
-          <Popup>
-            A pretty CSS3 popup. <br /> Easily customizable.
-          </Popup>
-        </Marker>
-      </MapContainer>
+    <div className="h-100 d-flex flex-column">
+      <header className="navbar navbar-dark bg-dark">
+        <a className="navbar-brand px-3">MapApp</a>
+      </header>
+      <div className="container-fluid flex-grow-1">
+        <div className="row h-100">
+          <nav
+            id="sidebar"
+            className="px-0 col-md-3 col-lg-2 d-md-block bg-light sidebar collapse"
+          >
+            <SearchStr coordChange={coordChange}></SearchStr>
+          </nav>
+          <main className="px-0 col-md-9 ms-sm-auto col-lg-10 d-flex flex-column h-100">
+            <MapContainer
+              className="flex-grow-1"
+              zoom={15}
+              minZoom={1}
+              maxZoom={17}
+              zoomAnimation={true}
+            >
+              <MyMapComponent
+                markerPosition={markerPosition}
+                mapPosition={mapPosition}
+              ></MyMapComponent>
+            </MapContainer>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }
